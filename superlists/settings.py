@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'lists',
     'accounts',
+    'functional_tests',
 ]
 
 AUTH_USER_MODEL = 'accounts.User'
@@ -46,8 +47,8 @@ AUTHENTICATION_BACKENDS = [
     'accounts.authentication.PasswordlessAuthenticationBackend',
 ]
 
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_HOST_USER = 'drbubo68@gmail.com'
+EMAIL_HOST = 'smtp.yahoo.com'
+EMAIL_HOST_USER = 'bene.bubone@yahoo.com'
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_PASSWORD')
 EMAIL_USE_TLS = True
 EMAIL_PORT = 587
