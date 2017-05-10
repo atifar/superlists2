@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.utils.html import escape
 
@@ -6,6 +7,8 @@ from lists.forms import (
     ExistingListItemForm, ItemForm,
 )
 from lists.models import Item, List
+
+User = get_user_model()
 
 
 class HomePageTest(TestCase):
@@ -51,6 +54,13 @@ class NewListTest(TestCase):
         self.assertEqual(List.objects.count(), 0)
         self.assertEqual(Item.objects.count(), 0)
 
+    def test_list_owner_is_saved_if_user_is_authenticated(self):
+        user = User.objects.create(email='a@b.com')
+        self.client.force_login(user)
+        self.client.post('/lists/new', data={'text': 'new item'})
+        list_ = List.objects.first()
+        self.assertEqual(list_.owner, user)
+
 
 class ListViewTest(TestCase):
 
@@ -60,7 +70,7 @@ class ListViewTest(TestCase):
         self.assertTemplateUsed(response, 'list.html')
 
     def test_passes_correct_list_to_template(self):
-        other_list = List.objects.create()
+        other_list = List.objects.create()  # noqa
         correct_list = List.objects.create()
         response = self.client.get('/lists/%d/' % (correct_list.id,))
         self.assertEqual(response.context['list'], correct_list)
@@ -81,7 +91,7 @@ class ListViewTest(TestCase):
         self.assertNotContains(response, 'other list item 2')
 
     def test_can_save_a_post_request_to_an_existing_list(self):
-        other_list = List.objects.create()
+        other_list = List.objects.create()  # noqa
         correct_list = List.objects.create()
 
         self.client.post(
@@ -95,7 +105,7 @@ class ListViewTest(TestCase):
         self.assertEqual(new_item.list, correct_list)
 
     def test_post_redirects_to_list_view(self):
-        other_list = List.objects.create()
+        other_list = List.objects.create()  # noqa
         correct_list = List.objects.create()
 
         response = self.client.post(
@@ -131,7 +141,7 @@ class ListViewTest(TestCase):
 
     def test_duplicate_item_validation_errors_end_up_on_lists_page(self):
         list1 = List.objects.create()
-        item1 = Item.objects.create(list=list1, text='textey')
+        item1 = Item.objects.create(list=list1, text='textey')  # noqa
         response = self.client.post(
             '/lists/%d/' % (list1.id,),
             data={'text': 'textey'}
@@ -152,5 +162,12 @@ class ListViewTest(TestCase):
 class MyListsTest(TestCase):
 
     def test_my_lists_url_renders_my_lists_template(self):
+        User.objects.create(email='a@b.com')
         response = self.client.get('/lists/users/a@b.com/')
         self.assertTemplateUsed(response, 'my_lists.html')
+
+    def test_passes_correct_owner_to_template(self):
+        User.objects.create(email='wrong@owner.com')
+        correct_user = User.objects.create(email='a@b.com')
+        response = self.client.get('/lists/users/a@b.com/')
+        self.assertEqual(response.context['owner'], correct_user)
